@@ -1,0 +1,158 @@
+<html>
+<head>
+<script src="riffwave.js"></script>
+<script src="pi.js"></script>
+</head>
+<body>
+<script type='text/javascript'>
+	var pi_length = pi.length;
+	var digit_index = 0;
+	var interval = 0.5;
+	var timer;
+	var played_digits = "";
+
+	var semitones;
+
+	function get_freq(i){
+		return 440*Math.pow(2,i/12.0);
+	}
+
+	function get_tone(i){
+		// skip do#, re#, fa#, sol#, la#
+		var notes = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16];
+
+		return notes[i];
+	}
+
+	function init_semitones()
+	{
+		semitones = [];
+
+		for (i=0; i<17; i++)
+		{
+			var audio = new Audio();
+			var wave = new RIFFWAVE(); 
+			wave.header.sampleRate = 44100;
+			wave.header.numChannels = 1;
+
+			var freq = get_freq(i);
+
+			var data = [];
+			var j = 0;
+			while (j<44100*interval*0.5) { 
+			  data[j++] = 128+Math.round(127*Math.sin(freq*2*j*Math.PI/44100));
+			}
+
+			wave.Make(data);
+			audio.src = wave.dataURI;
+
+			semitones.push(audio);
+		}
+	}
+
+
+	function play_pi()
+	{
+		if (digit_index>pi_length)
+			digit_index = 0;
+
+		digit = pi[digit_index++]
+
+		played_digits+=digit
+
+		if (digit == ".")
+		{
+			digit = pi[digit_index++]
+			played_digits+=digit;
+		}
+
+	  	document.getElementById("pi").innerHTML=played_digits;
+		note = parseInt(digit);
+
+		var i=get_tone(note);
+		semitones[i].play();
+	}
+
+	function play_semitones()
+	{
+		if (digit_index>pi_length)
+			digit_index = 0;
+
+		digit = pi[digit_index++]
+
+		played_digits+=digit
+
+		if (digit == ".")
+		{
+			digit = pi[digit_index++]
+			played_digits+=digit;
+		}
+
+	  	document.getElementById("pi").innerHTML=played_digits;
+		semitones[parseInt(digit)].play();
+	}
+
+
+	function play_random()
+	{
+		note = Math.floor(Math.random()*10);
+		played_digits+=note
+	  	document.getElementById("pi").innerHTML=played_digits;
+		var i=get_tone(note);
+		semitones[i].pause();
+		semitones[i].currentTime=0;
+		semitones[i].play();
+	}
+
+	function play_plain()
+	{
+		var audio = new Audio();
+		var wave = new RIFFWAVE();
+		wave.header.sampleRate = 44100;
+		wave.header.numChannels = 1;
+
+		var data = [];
+		var j = 0;
+		while (j<2*44100) { 
+			if (digit_index>pi_length)
+				digit_index = 0;
+
+			digit = pi[digit_index++];
+
+			if (digit == ".")
+				digit = pi[digit_index++];
+			digit = parseInt(digit);
+
+		  data[j++] = digit*25.5
+		}
+
+		wave.Make(data);
+		audio.src = wave.dataURI;
+		audio.play();
+	}
+
+	function play(play_func)
+	{
+		stop()
+		timer=setInterval(play_func, interval*1000);
+		played_digits=""
+		digit_index = 0
+	}
+
+	function stop()
+	{
+		clearInterval(timer)
+	}
+
+	init_semitones();
+</script>
+<h1>Pi</h1>
+<textarea id="pi" style='width:100%; height:50%'></textarea>
+<button onclick='play(play_pi);'>PI notes</button>
+<button onclick='play(play_semitones);'>PI semitones</button>
+<button onclick='play(play_random);'>RANDOM notes</button>
+<button onclick='play_plain();'>PLAIN PI (~88K, 2 sec)</button>
+<button onclick='stop();'>Stop</button>
+</body>
+
+</html>
